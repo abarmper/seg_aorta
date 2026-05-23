@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# Data, models, outputs (too large / not source)
+data/
+outputs/
+models/*.pth
+models/*.pt
+models/*.ckpt
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
