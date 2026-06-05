@@ -103,20 +103,9 @@ Both create a minimal base environment, then pip-install torch from
 `requirements-torch-{cpu,cu118}.txt` and the medical/mesh stack from
 `requirements.txt`, and register a Jupyter kernel.
 
-## Inference requirements (AWS)
-
-See [`INFERENCE_REQUIREMENTS.md`](INFERENCE_REQUIREMENTS.md) for full benchmark details. Summary:
-
-| Mode | GPU | VRAM | RAM | Time/case |
-|------|-----|------|-----|-----------|
-| Fast (`--no-explain`) | T4 / L4 16 GB | ≤ 6 GB | ~5 GB | 17–32 s |
-| Explainability | A100 40/80 GB* | up to ~51 GB | ~7 GB | 53–99 s |
-
-\* A10G / L4 24 GB also works, relying on the automatic ROI fallback for Grad-CAM on large volumes.
-
 ## Notes
 
 - `pymeshfix` is optional — mesh repair is skipped if it cannot be imported.
 - Video output tries MP4 first and falls back to GIF if encoding is unavailable.
 - CPU mode is supported via `--device cpu` (slower).
-- The pinned target versions are Python 3.10, PyTorch 2.0.1, MONAI 1.1.0; see `INFERENCE_REQUIREMENTS.md` for the full benchmark details.
+- The pinned target versions are Python 3.10, PyTorch 2.0.1, MONAI 1.1.0.
