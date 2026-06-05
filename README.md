@@ -11,16 +11,19 @@ Two entry points share the exact same pipeline:
 Set up the environment first (conda recommended; see [Setting up the environment](#setting-up-the-environment-from-scratch) for options):
 
 ```bash
-bash setup_conda_environment.sh                    # CPU
-TORCH_TARGET=cu118 bash setup_conda_environment.sh # CUDA 11.8
+bash setup_conda_environment.sh
 ```
 
 Then activate and run:
 
 ```bash
-conda activate seg-aorta
+conda activate sega-aorta
 python demo.py --case K18
 ```
+
+All dependencies — including the CUDA 12.1 PyTorch build — are pinned in a single
+`requirements.txt`, so `pip install -r requirements.txt` is enough on an existing
+Python 3.12 environment.
 
 ## Expected layout
 
@@ -79,7 +82,7 @@ Additionally with explainability (default, omitted under `--no-explain`):
 ## Notebook
 
 ```bash
-conda activate seg-aorta
+conda activate sega-aorta
 jupyter lab        # then open SEGA_aorta_inference_mesh_tutorial.ipynb
 ```
 
@@ -87,31 +90,32 @@ The notebook mirrors `demo.py` cell-for-cell.
 
 ## Setting up the environment from scratch
 
-If you need to rebuild the environment, two scripts are provided.
+All dependencies live in a single fully-pinned `requirements.txt` (Python 3.12,
+`torch==2.4.1+cu121`, `monai==1.4.0`). If you need to rebuild the environment,
+two scripts are provided.
 
 **venv (pip):**
 
 ```bash
-bash setup_environment.sh                              # CPU
-TORCH_TARGET=cu118 bash setup_environment.sh           # CUDA 11.8
-PYTHON_BIN=python3.10 VENV_DIR=.venv bash setup_environment.sh
+bash setup_environment.sh
+PYTHON_BIN=python3.12 VENV_DIR=.venv bash setup_environment.sh
 ```
 
 **conda** (recommended for fresh machines — avoids slow PyTorch/MONAI/pymeshfix solves):
 
 ```bash
-bash setup_conda_environment.sh                        # CPU
-TORCH_TARGET=cu118 bash setup_conda_environment.sh     # CUDA 11.8
+bash setup_conda_environment.sh
 ENV_NAME=seg-aorta bash setup_conda_environment.sh     # custom env name
 ```
 
-Both create a minimal base environment, then pip-install torch from
-`requirements-torch-{cpu,cu118}.txt` and the medical/mesh stack from
-`requirements.txt`, and register a Jupyter kernel.
+Both create a minimal base environment, then `pip install -r requirements.txt`
+(which includes the CUDA 12.1 torch wheels) and register a Jupyter kernel. For a
+CPU-only machine, install the CPU torch wheels as noted at the top of
+`requirements.txt`.
 
 ## Notes
 
 - `pymeshfix` is optional — mesh repair is skipped if it cannot be imported.
 - Video output tries MP4 first and falls back to GIF if encoding is unavailable.
 - CPU mode is supported via `--device cpu` (slower).
-- The pinned target versions are Python 3.10, PyTorch 2.0.1, MONAI 1.1.0.
+- The pinned target versions are Python 3.12, PyTorch 2.4.1+cu121, MONAI 1.4.0 (see `requirements.txt`).

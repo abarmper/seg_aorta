@@ -25,17 +25,17 @@ Outputs land under `outputs/<CASE>/` (mask NIfTI, two OBJ meshes for pred + one 
 
 ## Environment
 
-A pre-built venv lives at `.venv/`. To set up fresh, prefer the conda script over solving a single env (PyTorch + MONAI + SimpleITK + pymeshfix solves are slow):
+A pre-built venv lives at `.venv/`. All dependencies are pinned in a single `requirements.txt` (including the CUDA 12.1 torch wheels via `--extra-index-url`). To set up fresh, prefer the conda script over solving a single env (PyTorch + MONAI + SimpleITK + pymeshfix solves are slow):
 
 ```bash
-bash setup_conda_environment.sh                    # CPU torch
-TORCH_TARGET=cu118 bash setup_conda_environment.sh # CUDA 11.8
+bash setup_conda_environment.sh                    # default env name (sega-aorta)
 ENV_NAME=seg-aorta bash setup_conda_environment.sh # custom env name
+bash setup_environment.sh                          # venv (pip) instead of conda
 ```
 
-The script creates a minimal conda env (`environment.yml`), then pip-installs torch from `requirements-torch-{cpu,cu118}.txt` and the medical/mesh stack from `requirements.txt`, and registers a Jupyter kernel.
+Each script creates a minimal base env, then runs `pip install -r requirements.txt` and registers a Jupyter kernel. Into an existing Python 3.12 env, `pip install -r requirements.txt` alone is enough. For CPU-only, swap in the CPU torch wheels noted at the top of `requirements.txt`.
 
-Pinned: `monai==1.1.0`, `torch==2.0.1`, Python 3.10. `numpy<2` and `scipy<1.12` are hard constraints for the MONAI 1.1 stack — do not bump.
+Pinned: Python 3.12, `torch==2.4.1+cu121`, `monai==1.4.0`, `numpy==1.26.4` (must stay `<2`), `scipy==1.13.1`. These are the exact versions in the validated `.venv` — do not bump without re-validating.
 
 ## Pipeline architecture (demo.py)
 

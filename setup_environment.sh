@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Create the venv used for SEG.A aorta inference.
+#
 # Usage:
-#   bash setup_environment.sh                         # CPU environment
-#   TORCH_TARGET=cu118 bash setup_environment.sh      # CUDA 11.8 PyTorch wheels
-#   PYTHON_BIN=python3.10 VENV_DIR=.venv-sega bash setup_environment.sh
+#   bash setup_environment.sh
+#   PYTHON_BIN=python3.12 VENV_DIR=.venv bash setup_environment.sh
+#
+# All dependencies (including CUDA 12.1 torch) are pinned in requirements.txt,
+# so this script just builds a venv and installs that one file.
 
-TORCH_TARGET="${TORCH_TARGET:-cpu}"   # cpu | cu118 | pypi
 VENV_DIR="${VENV_DIR:-.venv}"
-PYTHON_BIN="${PYTHON_BIN:-python3.10}"
+PYTHON_BIN="${PYTHON_BIN:-python3.12}"
 KERNEL_NAME="${KERNEL_NAME:-sega-aorta}"
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Python (sega-aorta)}"
 
@@ -20,8 +23,8 @@ fi
 "${PYTHON_BIN}" - <<'PY'
 import sys
 major, minor = sys.version_info[:2]
-if (major, minor) < (3, 8) or (major, minor) > (3, 10):
-    print(f"WARNING: Python {major}.{minor} detected. This tutorial is best tested with Python 3.10 because it uses torch==2.0.1 and monai==1.1.0.")
+if (major, minor) != (3, 12):
+    print(f"WARNING: Python {major}.{minor} detected. The validated stack uses Python 3.12.")
 PY
 
 "${PYTHON_BIN}" -m venv "${VENV_DIR}"
@@ -29,23 +32,6 @@ PY
 source "${VENV_DIR}/bin/activate"
 
 python -m pip install --upgrade pip setuptools wheel
-
-case "${TORCH_TARGET}" in
-  cpu)
-    python -m pip install -r requirements-torch-cpu.txt
-    ;;
-  cu118)
-    python -m pip install -r requirements-torch-cu118.txt
-    ;;
-  pypi)
-    python -m pip install torch==2.0.1 torchvision==0.15.2
-    ;;
-  *)
-    echo "Unknown TORCH_TARGET='${TORCH_TARGET}'. Use cpu, cu118, or pypi."
-    exit 1
-    ;;
-esac
-
 python -m pip install -r requirements.txt
 python -m ipykernel install --user --name "${KERNEL_NAME}" --display-name "${KERNEL_DISPLAY_NAME}"
 

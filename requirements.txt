@@ -1,18 +1,39 @@
-# Core inference and medical image IO packages.
-# Torch is installed separately by setup_conda_environment.sh so CPU/CUDA builds stay explicit.
-monai==1.1.0
-numpy>=1.23,<2
-scipy>=1.10,<1.12
-scikit-image>=0.21,<0.23
-SimpleITK>=2.2,<2.4
-nibabel>=5.1,<5.3
-trimesh>=3.22,<4.1
-matplotlib>=3.7,<3.9
+# SEG.A aorta inference — single, fully-pinned dependency set.
+#
+# These versions are exactly what ships in the validated .venv (Python 3.12,
+# CUDA 12.1). Install everything in one shot:
+#
+#   pip install -r requirements.txt
+#
+# The --extra-index-url below provides the CUDA 12.1 torch/torchvision wheels;
+# everything else resolves from PyPI. For a CPU-only box, drop the +cu121 local
+# version tags and the extra index, or install the matching CPU torch wheels
+# (torch==2.4.1 torchvision==0.19.1) from https://download.pytorch.org/whl/cpu.
+--extra-index-url https://download.pytorch.org/whl/cu121
 
-# Video and interactive 3D visualization.
-imageio>=2.31,<2.35
-imageio-ffmpeg>=0.4.9,<0.5
-plotly>=5.18,<6
+# Deep learning + segmentation model.
+torch==2.4.1+cu121
+torchvision==0.19.1+cu121
+monai==1.4.0
 
-# Mesh repair. The notebook will still run if this import fails, but repair will be skipped.
-pymeshfix>=0.16,<0.18
+# Scientific stack (numpy<2 / scipy<1.12-era are required by the MONAI 1.4 build).
+numpy==1.26.4
+scipy==1.13.1
+scikit-image==0.26.0
+
+# Medical image IO.
+SimpleITK==2.5.5
+nibabel==5.4.2
+
+# Meshing, 2D overlays, video, and interactive 3D.
+trimesh==4.5.3
+matplotlib==3.10.9
+imageio==2.37.3
+imageio-ffmpeg==0.6.0
+plotly==6.7.0
+
+# Optional mesh repair — pipeline continues (repair skipped) if it fails to import.
+pymeshfix==0.18.1
+
+# Notebook kernel (only needed to run SEGA_aorta_inference_mesh_tutorial.ipynb).
+ipykernel==7.2.0

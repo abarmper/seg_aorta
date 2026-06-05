@@ -65,34 +65,40 @@ Full end-to-end pipeline: model load → inference → meshing → overlay PNG �
 
 ## Software Environment
 
-| Component | Pinned (requirements.txt) | Installed / tested |
-|-----------|--------------------------|-------------------|
-| Python | 3.10 | **3.12.3** |
-| PyTorch | 2.0.1+cu118 | **2.4.1+cu121** |
-| MONAI | 1.1.0 | **1.4.0** |
-| NumPy | <2 | 1.26.4 |
-| SciPy | <1.12 | 1.13.1 |
-| SimpleITK | ≥2.2, <2.4 | installed |
-| scikit-image | ≥0.21, <0.23 | installed |
-| trimesh | ≥3.22, <4.1 | installed |
-| matplotlib | ≥3.7, <3.9 | installed |
-| plotly | ≥5.18, <6 | installed |
-| imageio / imageio-ffmpeg | per requirements.txt | installed |
-| pymeshfix | ≥0.16, <0.18 | installed |
+All dependencies are pinned in a single `requirements.txt`, matching the validated `.venv` exactly (the same environment the benchmarks above were run on).
 
-> ⚠️ The `requirements.txt` pins (`monai==1.1.0`, `torch==2.0.1`, `numpy<2`, `scipy<1.12`) reflect the originally validated stack. The benchmarks above were run on the **installed** environment (torch 2.4.1 / monai 1.4.0 / Python 3.12). For reproducible deployment, use the pinned versions via `setup_conda_environment.sh`.
+| Component | Pinned (`requirements.txt`) |
+|-----------|-----------------------------|
+| Python | 3.12 |
+| PyTorch | 2.4.1+cu121 |
+| torchvision | 0.19.1+cu121 |
+| MONAI | 1.4.0 |
+| NumPy | 1.26.4 |
+| SciPy | 1.13.1 |
+| scikit-image | 0.26.0 |
+| SimpleITK | 2.5.5 |
+| nibabel | 5.4.2 |
+| trimesh | 4.5.3 |
+| matplotlib | 3.10.9 |
+| plotly | 6.7.0 |
+| imageio / imageio-ffmpeg | 2.37.3 / 0.6.0 |
+| pymeshfix | 0.18.1 |
+| ipykernel | 7.2.0 |
 
 ### Environment setup
 
 ```bash
-# CPU
+# venv (pip) — installs everything, including CUDA 12.1 torch, from requirements.txt
+bash setup_environment.sh
+
+# conda (recommended for fresh machines)
 bash setup_conda_environment.sh
+ENV_NAME=seg-aorta bash setup_conda_environment.sh   # custom env name
 
-# CUDA 11.8
-TORCH_TARGET=cu118 bash setup_conda_environment.sh
-
-# Custom env name
-ENV_NAME=seg-aorta bash setup_conda_environment.sh
+# or, into an existing Python 3.12 environment
+pip install -r requirements.txt
 ```
 
-Dependency files: `requirements.txt`, `requirements-torch-cu118.txt`, `requirements-torch-cpu.txt`, `environment.yml`.
+For a CPU-only machine, install the CPU torch wheels (`torch==2.4.1 torchvision==0.19.1` from `https://download.pytorch.org/whl/cpu`) and the rest of `requirements.txt`, as noted at the top of that file.
+
+Single dependency file: `requirements.txt`.

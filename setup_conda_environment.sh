@@ -1,23 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fast Conda setup for the SEG.A aorta inference notebook.
+# Conda setup for the SEG.A aorta inference notebook.
 #
 # Usage:
-#   bash setup_conda_environment.sh                         # CPU PyTorch
-#   TORCH_TARGET=cu118 bash setup_conda_environment.sh      # CUDA 11.8 PyTorch
-#   ENV_NAME=seg-aorta bash setup_conda_environment.sh      # Custom environment name
+#   bash setup_conda_environment.sh                    # default env name
+#   ENV_NAME=seg-aorta bash setup_conda_environment.sh # custom environment name
 #
-# Why this script does not put every package in environment.yml:
+# Why this script does not put every package in an environment.yml:
 # A full Conda solve with PyTorch + MONAI + SimpleITK + pymeshfix can be very slow.
-# This script creates a small Conda environment first, then installs the scientific
-# and medical-imaging stack with pip, which is usually much faster and more reliable.
+# This script creates a small Conda environment first, then installs the whole
+# scientific/medical-imaging stack from requirements.txt with pip, which is much
+# faster and more reliable.
 
-TORCH_TARGET="${TORCH_TARGET:-cpu}"   # cpu | cu118
 ENV_NAME="${ENV_NAME:-sega-aorta}"
 KERNEL_NAME="${KERNEL_NAME:-${ENV_NAME}}"
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Python (${ENV_NAME})}"
-PYTHON_VERSION="${PYTHON_VERSION:-3.10}"
+PYTHON_VERSION="${PYTHON_VERSION:-3.12}"
 
 if ! command -v conda >/dev/null 2>&1; then
   echo "conda was not found. Install Miniconda, Miniforge, or Mambaforge first, then rerun this script."
@@ -25,25 +24,7 @@ if ! command -v conda >/dev/null 2>&1; then
 fi
 
 if [[ ! -f requirements.txt ]]; then
-  echo "requirements.txt was not found. Run this script from the tutorial package folder."
-  exit 1
-fi
-
-case "${TORCH_TARGET}" in
-  cpu)
-    TORCH_REQUIREMENTS="requirements-torch-cpu.txt"
-    ;;
-  cu118)
-    TORCH_REQUIREMENTS="requirements-torch-cu118.txt"
-    ;;
-  *)
-    echo "Unknown TORCH_TARGET='${TORCH_TARGET}'. Use cpu or cu118."
-    exit 1
-    ;;
-esac
-
-if [[ ! -f "${TORCH_REQUIREMENTS}" ]]; then
-  echo "Torch requirements file not found: ${TORCH_REQUIREMENTS}"
+  echo "requirements.txt was not found. Run this script from the project root."
   exit 1
 fi
 
@@ -62,7 +43,6 @@ else
     "python=${PYTHON_VERSION}" \
     "pip>=23" \
     "jupyterlab>=4,<5" \
-    "ipykernel>=6.29,<7" \
     "ipywidgets>=8.1,<9" \
     wheel \
     setuptools
@@ -73,10 +53,7 @@ conda activate "${ENV_NAME}"
 echo "Upgrading pip..."
 python -m pip install --upgrade pip setuptools wheel
 
-echo "Installing PyTorch target '${TORCH_TARGET}' from ${TORCH_REQUIREMENTS}..."
-python -m pip install -r "${TORCH_REQUIREMENTS}"
-
-echo "Installing medical-imaging and mesh packages from requirements.txt..."
+echo "Installing all dependencies (including CUDA 12.1 torch) from requirements.txt..."
 python -m pip install -r requirements.txt
 
 echo "Installing Jupyter kernel '${KERNEL_NAME}'..."
@@ -107,7 +84,6 @@ cat <<MSG
 
 Conda environment is ready: ${ENV_NAME}
 Notebook kernel: ${KERNEL_DISPLAY_NAME}
-PyTorch target: ${TORCH_TARGET}
 
 Activate it with:
   conda activate ${ENV_NAME}
