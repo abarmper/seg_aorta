@@ -1,0 +1,14 @@
+name: sega-aorta
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Same minimal Conda environment as CPU.
+  # CUDA PyTorch wheels are installed by setup_conda_environment.sh.
+  - python=3.10
+  - pip>=23
+  - jupyterlab>=4,<5
+  - ipykernel>=6.29,<7
+  - ipywidgets>=8.1,<9
+  - wheel
+  - setuptools
