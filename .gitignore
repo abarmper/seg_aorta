@@ -16,8 +16,6 @@ outputs/
 # Large binary inputs (CT volumes/labels). The trained checkpoint is tracked.
 models/*.pth
 !models/checkpoint_segresnet.pth
-data/volumes_full/*.nii.gz
-data/labels_full/*.nii.gz
 
 # OS / editor cruft
 .DS_Store
