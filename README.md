@@ -8,17 +8,18 @@ Two entry points share the exact same pipeline:
 
 ## Quick start
 
-A pre-built virtual environment is included at `.venv/`. Activate it and run the demo directly:
+Set up the environment first (conda recommended; see [Setting up the environment](#setting-up-the-environment-from-scratch) for options):
 
 ```bash
-source .venv/bin/activate
-python demo.py --case K18
+bash setup_conda_environment.sh                    # CPU
+TORCH_TARGET=cu118 bash setup_conda_environment.sh # CUDA 11.8
 ```
 
-Or run without activating:
+Then activate and run:
 
 ```bash
-.venv/bin/python demo.py --case K18
+conda activate seg-aorta
+python demo.py --case K18
 ```
 
 ## Expected layout
@@ -72,7 +73,7 @@ Additionally with explainability (default, omitted under `--no-explain`):
 ## Notebook
 
 ```bash
-source .venv/bin/activate
+conda activate seg-aorta
 jupyter lab        # then open SEGA_aorta_inference_mesh_tutorial.ipynb
 ```
 
@@ -118,4 +119,4 @@ See [`INFERENCE_REQUIREMENTS.md`](INFERENCE_REQUIREMENTS.md) for full benchmark 
 - `pymeshfix` is optional — mesh repair is skipped if it cannot be imported.
 - Video output tries MP4 first and falls back to GIF if encoding is unavailable.
 - CPU mode is supported via `--device cpu` (slower).
-- The pinned target versions are Python 3.10, PyTorch 2.0.1, MONAI 1.1.0. The included `.venv/` runs Python 3.12 / PyTorch 2.4.1 / MONAI 1.4.0; see `INFERENCE_REQUIREMENTS.md` for the full comparison.
+- The pinned target versions are Python 3.10, PyTorch 2.0.1, MONAI 1.1.0; see `INFERENCE_REQUIREMENTS.md` for the full benchmark details.
