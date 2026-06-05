@@ -30,8 +30,12 @@ Place your files relative to the project root (`--project-root`, default `.`):
 project-root/
   models/checkpoint_segresnet.pth
   data/volumes_full/<CASE>.nii.gz
-  data/labels_full/<CASE>.nii.gz
+  data/labels_full/<CASE>.nii.gz   # optional — see label-free mode below
 ```
+
+The label is optional. If `data/labels_full/<CASE>.nii.gz` is missing, or you pass
+`--no-label`/`--test`, the demo runs in **label-free (test) mode**: it segments the
+volume and skips everything that needs a ground truth (Dice, GT mesh, GT overlay/panel).
 
 Outputs are written to `outputs/<CASE>/`.
 
@@ -40,6 +44,7 @@ Outputs are written to `outputs/<CASE>/`.
 ```bash
 python demo.py --case K18                       # full pipeline + explainability
 python demo.py --case K18 --no-explain          # fast: segmentation only (alias: --fast)
+python demo.py --case K18 --no-label            # label-free / test mode (alias: --test)
 python demo.py --case K18 --device cuda:0        # pick a specific GPU
 python demo.py --case K18 --device cpu           # run on CPU
 python demo.py --case K18 --mc-passes 30         # more MC Dropout passes (default 20)
@@ -53,6 +58,7 @@ python demo.py --case K18 --project-root /path/to/root   # use a different root
 | `--project-root` | `.` | Root containing `models/`, `data/`, `outputs/`. |
 | `--device` | auto | `cuda`, `cuda:N`, or `cpu`. Defaults to CUDA if available. |
 | `--no-explain` / `--fast` | off | Skip all explainability; single deterministic pass. |
+| `--no-label` / `--test` | off | Label-free mode: skip Dice, GT mesh, and GT overlay/panel. Auto-engaged if the label file is absent. |
 | `--mc-passes` | `20` | Number of MC Dropout stochastic passes. |
 | `--gradcam-layer` | `up_layers.-1` | Dotted path to the Grad-CAM target layer. |
 
@@ -61,9 +67,9 @@ python demo.py --case K18 --project-root /path/to/root   # use a different root
 In every mode (`outputs/<CASE>/`):
 - `<CASE>_predicted_aorta_lumen.nii.gz` — predicted mask
 - `<CASE>_aortic_vessel_tree_smoothed.obj`, `..._volume_mesh.obj` — prediction meshes
-- `<CASE>_ground_truth_aortic_vessel_tree_smoothed.obj` — GT mesh
-- `<CASE>_ct_gt_pred_overlay_best_slice.png`, `..._overlay_video.mp4` — 2D overlays
-- `<CASE>_gt_pred_3d_comparison.html` — interactive 3D comparison
+- `<CASE>_ground_truth_aortic_vessel_tree_smoothed.obj` — GT mesh *(skipped in label-free mode)*
+- `<CASE>_ct_gt_pred_overlay_best_slice.png`, `..._overlay_video.mp4` — 2D overlays *(prediction-only in label-free mode)*
+- `<CASE>_gt_pred_3d_comparison.html` — interactive 3D comparison *(single PRED panel in label-free mode)*
 
 Additionally with explainability (default, omitted under `--no-explain`):
 - `<CASE>_uncertainty_{mean_prob,entropy,std}.nii.gz` + entropy overlay PNG/video

@@ -51,6 +51,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--case", default="K18")
     p.add_argument("--project-root", default=".")
     p.add_argument("--device", default=None, help="cuda, cuda:N, or cpu")
+    p.add_argument("--no-label", "--test", dest="no_label", action="store_true",
+                   help="Label-free (test) mode: run inference without a ground-truth label. "
+                        "Skips Dice, the GT mesh, and the GT overlay/panel. Also engaged "
+                        "automatically when the label file is absent.")
     p.add_argument("--no-explain", "--fast", dest="no_explain", action="store_true",
                    help="Fast mode: skip all explainability (MC Dropout uncertainty + Seg-Grad-CAM). "
                         "Runs a single deterministic pass instead of --mc-passes, and produces no "
@@ -74,9 +78,14 @@ def main():
     out_dir = root / "outputs" / case
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    for p in (image_path, gt_path, model_path):
+    for p in (image_path, model_path):
         if not p.exists():
             raise FileNotFoundError(p)
+
+    has_gt = gt_path.exists() and not args.no_label
+    if not has_gt:
+        reason = "--no-label/--test set" if args.no_label else f"label not found: {gt_path}"
+        print(f"Label-free (test) mode: {reason}")
 
     device = torch.device(args.device) if args.device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Device: {device}")
@@ -88,9 +97,12 @@ def main():
     model = load_checkpoint(model, model_path, device)
 
     image_sitk = sitk.ReadImage(str(image_path))
-    gt_sitk = sitk.ReadImage(str(gt_path))
     image_zyx = sitk.GetArrayFromImage(image_sitk).astype(np.float32)
-    gt_zyx = sitk.GetArrayFromImage(gt_sitk) > 0
+    if has_gt:
+        gt_sitk = sitk.ReadImage(str(gt_path))
+        gt_zyx = sitk.GetArrayFromImage(gt_sitk) > 0
+    else:
+        gt_sitk = None
 
     # ----- inference -----
     if args.no_explain:
@@ -108,7 +120,10 @@ def main():
     print(f"  size xyz: {pred_sitk.GetSize()}  spacing xyz: {pred_sitk.GetSpacing()}")
 
     pred_zyx = sitk.GetArrayFromImage(pred_sitk) > 0
-    print(f"Dice: {viz.dice_score(gt_zyx, pred_zyx):.4f}")
+    if not has_gt:
+        gt_zyx = np.zeros_like(pred_zyx, dtype=bool)
+    if has_gt:
+        print(f"Dice: {viz.dice_score(gt_zyx, pred_zyx):.4f}")
 
     # ----- meshes -----
     print("Creating prediction meshes...")
@@ -117,21 +132,24 @@ def main():
     pred_volume.export(str(out_dir / f"{case}_aortic_vessel_tree_volume_mesh.obj"))
     print(f"  smoothed: {len(pred_smoothed.vertices):,} verts / {len(pred_smoothed.faces):,} faces")
 
-    print("Creating GT meshes...")
-    gt_smoothed, _ = create_meshes(gt_sitk, smoothing_iterations=10)
-    gt_smoothed.export(str(out_dir / f"{case}_ground_truth_aortic_vessel_tree_smoothed.obj"))
+    if has_gt:
+        print("Creating GT meshes...")
+        gt_smoothed, _ = create_meshes(gt_sitk, smoothing_iterations=10)
+        gt_smoothed.export(str(out_dir / f"{case}_ground_truth_aortic_vessel_tree_smoothed.obj"))
+    else:
+        gt_smoothed = None
 
     # ----- overlay PNG + video + 3D HTML -----
     print("Creating 2D overlay PNG...")
     viz.save_best_slice_png(image_zyx, gt_zyx, pred_zyx, case,
-                            out_dir / f"{case}_ct_gt_pred_overlay_best_slice.png")
+                            out_dir / f"{case}_ct_gt_pred_overlay_best_slice.png", has_gt=has_gt)
 
     print("Creating overlay video...")
     viz.save_overlay_video(
         image_zyx, gt_zyx, pred_zyx, case,
         mp4_path=out_dir / f"{case}_ct_gt_pred_overlay_video.mp4",
         gif_path=out_dir / f"{case}_ct_gt_pred_overlay_video.gif",
-        fps=12, step=2,
+        fps=12, step=2, has_gt=has_gt,
     )
 
     # ----- explainability artifacts -----

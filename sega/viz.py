@@ -79,18 +79,22 @@ def make_label_overlay_rgba(gt: np.ndarray, pred: np.ndarray, alpha: float = 0.5
     return rgba
 
 
-def save_best_slice_png(image: np.ndarray, gt: np.ndarray, pred: np.ndarray, case_id: str, out_path: Path):
+def save_best_slice_png(image: np.ndarray, gt: np.ndarray, pred: np.ndarray, case_id: str, out_path: Path,
+                        has_gt: bool = True):
     z = choose_best_axial_slice(gt, pred)
     fig, ax = plt.subplots(figsize=(8, 8))
     ax.imshow(normalize_for_display(image[z]), cmap="gray")
     ax.imshow(make_label_overlay_rgba(gt[z], pred[z]))
-    ax.set_title(f"{case_id}: CT + GT + Pred | z={z} | Dice={dice_score(gt, pred):.4f}", fontsize=14)
-    ax.axis("off")
-    handles = [
-        Patch(facecolor=(0.0, 1.0, 0.0, 0.55), label="GT only"),
-        Patch(facecolor=(1.0, 0.0, 1.0, 0.55), label="Prediction only"),
-        Patch(facecolor=(1.0, 1.0, 0.0, 0.55), label="GT ∩ Pred"),
-    ]
+    if has_gt:
+        ax.set_title(f"{case_id}: CT + GT + Pred | z={z} | Dice={dice_score(gt, pred):.4f}", fontsize=14)
+        handles = [
+            Patch(facecolor=(0.0, 1.0, 0.0, 0.55), label="GT only"),
+            Patch(facecolor=(1.0, 0.0, 1.0, 0.55), label="Prediction only"),
+            Patch(facecolor=(1.0, 1.0, 0.0, 0.55), label="GT ∩ Pred"),
+        ]
+    else:
+        ax.set_title(f"{case_id}: CT + Pred | z={z}", fontsize=14)
+        handles = [Patch(facecolor=(1.0, 0.0, 1.0, 0.55), label="Prediction")]
     ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, -0.08), ncol=3, frameon=False)
     plt.tight_layout()
     fig.savefig(out_path, dpi=180, bbox_inches="tight")
@@ -102,7 +106,10 @@ def _render_overlay_frame(image, gt, pred, z, case_id, overall_dice, dpi=120):
     fig, ax = plt.subplots(figsize=(6, 6), dpi=dpi)
     ax.imshow(normalize_for_display(image[z]), cmap="gray")
     ax.imshow(make_label_overlay_rgba(gt[z], pred[z]))
-    ax.set_title(f"{case_id} | axial z={z} | Dice={overall_dice:.4f}")
+    title = f"{case_id} | axial z={z}"
+    if overall_dice is not None:
+        title += f" | Dice={overall_dice:.4f}"
+    ax.set_title(title)
     ax.axis("off")
     plt.tight_layout(pad=0.2)
     fig.canvas.draw()
@@ -111,10 +118,11 @@ def _render_overlay_frame(image, gt, pred, z, case_id, overall_dice, dpi=120):
     return frame
 
 
-def save_overlay_video(image, gt, pred, case_id, mp4_path: Path, gif_path: Path, fps=12, step=2, margin=5):
+def save_overlay_video(image, gt, pred, case_id, mp4_path: Path, gif_path: Path, fps=12, step=2, margin=5,
+                       has_gt=True):
     slices = _slice_range_around_labels(gt, pred, step, margin)
     print(f"Rendering {len(slices)} GT/Pred video frames...")
-    overall_dice = dice_score(gt, pred)
+    overall_dice = dice_score(gt, pred) if has_gt else None
     frames = [_render_overlay_frame(image, gt, pred, z, case_id, overall_dice) for z in slices]
     return _save_frames(frames, mp4_path, gif_path, fps)
 
@@ -323,7 +331,7 @@ def _scene_blank(fig, row, col):
 
 
 def save_3d_html(
-    gt_mesh: trimesh.Trimesh,
+    gt_mesh: trimesh.Trimesh | None,
     pred_mesh: trimesh.Trimesh,
     case_id: str,
     out_path: Path,
@@ -331,7 +339,8 @@ def save_3d_html(
 ):
     """Write an interactive side-by-side 3D HTML.
 
-    Without ``pred_overlays`` this is the original GT-vs-PRED two-panel view.
+    Without ``pred_overlays`` this is the original GT-vs-PRED two-panel view
+    (or a single PRED panel when ``gt_mesh`` is None, i.e. label-free mode).
 
     With ``pred_overlays`` (a list of dicts, each ``{"field": sitk.Image,
     "title": str, "colorscale": str, "cmin": float, "cmax": float,
@@ -343,6 +352,22 @@ def save_3d_html(
     colored prediction per overlay.
     """
     if not pred_overlays:
+        if gt_mesh is None:
+            fig = make_subplots(
+                rows=1, cols=1, specs=[[{"type": "scene"}]],
+                subplot_titles=("PRED",),
+            )
+            fig.add_trace(mesh_to_trace(pred_mesh, "PRED"), row=1, col=1)
+            _scene_blank(fig, 1, 1)
+            fig.update_layout(
+                title=f"{case_id}: prediction 3D aorta mesh",
+                width=700, height=900, showlegend=False,
+                margin=dict(l=0, r=0, t=80, b=0),
+                paper_bgcolor="white", plot_bgcolor="white", font=dict(size=18),
+            )
+            fig.write_html(str(out_path), include_plotlyjs="cdn")
+            print(f"Saved 3D HTML: {out_path}")
+            return
         fig = make_subplots(
             rows=1, cols=2, specs=[[{"type": "scene"}, {"type": "scene"}]],
             subplot_titles=("GT", "PRED"), horizontal_spacing=0.02,
@@ -362,7 +387,7 @@ def save_3d_html(
         return
 
     cols = 2
-    panels = [("Ground truth", None), ("Prediction", None)]
+    panels = [("Prediction", None)] if gt_mesh is None else [("Ground truth", None), ("Prediction", None)]
     for ov in pred_overlays:
         panels.append((ov["title"], ov))
     n = len(panels)
@@ -383,7 +408,7 @@ def save_3d_html(
     for k, (title, ov) in enumerate(panels):
         r, c = k // cols + 1, k % cols + 1
         if ov is None:
-            mesh = gt_mesh if k == 0 else pred_mesh
+            mesh = gt_mesh if (gt_mesh is not None and k == 0) else pred_mesh
             fig.add_trace(mesh_to_trace(mesh, title, color="red"), row=r, col=c)
         else:
             intensity = sample_field_at_vertices(ov["field"], pred_verts, radius=ov.get("sample_radius", 0))
