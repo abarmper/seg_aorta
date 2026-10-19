@@ -119,3 +119,24 @@ CPU-only machine, install the CPU torch wheels as noted at the top of
 - Video output tries MP4 first and falls back to GIF if encoding is unavailable.
 - CPU mode is supported via `--device cpu` (slower).
 - The pinned target versions are Python 3.12, PyTorch 2.4.1+cu121, MONAI 1.4.0 (see `requirements.txt`).
+
+## License
+
+The source code and the trained model weights (`models/checkpoint_segresnet.pth`) are released
+under the [Apache License 2.0](LICENSE). Copyright © Biomedical Engineering Laboratory (BEL),
+National Technical University of Athens (NTUA).
+
+The model was trained on the public [AVT – Aortic Vessel Tree CTA dataset](https://doi.org/10.6084/m9.figshare.14806362)
+(SEG.A 2023 challenge; Radl et al., *Data in Brief* 40, 107801, 2022), licensed under CC BY 4.0. AVT is
+built from three source collections whose own licences apply to their data: KiTS19 (CC BY-NC-SA 4.0),
+RIDER Lung PET-CT / TCIA (CC BY 3.0), and Dongyang Hospital. The SegResNet architecture comes from
+[MONAI](https://github.com/Project-MONAI/MONAI) (Apache-2.0).
+
+**Sample data exception:** the two sample validation cases in `data/` (`K18`, `K19`) come from KiTS19
+and are **not** covered by Apache-2.0. They remain under **CC BY-NC-SA 4.0 (non-commercial use only)**.
+See [`data/README.md`](data/README.md) for details and the required attribution.
+
+If you use this model, please cite:
+T. P. Vagenas, K. Georgas, G. K. Matsopoulos. "Deep Learning-Based Segmentation and Mesh Reconstruction
+of the Aortic Vessel Tree from CTA Images". In: *SEGA 2023*, LNCS 14539, pp. 80–94, Springer (2024).
+https://doi.org/10.1007/978-3-031-53241-2_7
